@@ -1,0 +1,3 @@
+\section{Inline music (single staff, paragraph-sized)}
+
+Inline excerpts use a tighter staff size so a short gesture can sit beside text without dominating the page. The sample cell on this page is pulled in from its own fragment so a copy editor and an engraver can work in parallel. Here the cell follows the opening sentence in the same paragraph, so it is aligned to the text baseline; deeper in a paragraph you can switch to vertical centering so the cell does not look perched.\input{./chapters/introduction/inline/d-cell.lytex}

@@ -1,0 +1,13 @@
+\begin{titlepage}
+\thispagestyle{empty}
+\begingroup
+\color{bookBlack}
+\vspace*{\fill}
+\begin{center}
+{\fontsize{42}{46}\selectfont\bfseries \ProjectName\par}
+\vspace{0.35cm}
+{\fontsize{14}{18}\selectfont\itshape \ProjectSubtitle\par}
+\end{center}
+\vspace*{\fill}
+\endgroup
+\end{titlepage}

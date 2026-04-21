@@ -1,0 +1,137 @@
+\makeatletter
+\newcommand*{\l@bookexample}{\@dottedtocline{1}{0em}{2.3em}}
+\newcommand{\listofmusicalexamples}{%
+  \frontMatterChapter{List of Musical Examples}%
+  \addcontentsline{toc}{chapter}{List of Musical Examples}%
+  \@starttoc{loe}%
+}
+\makeatother
+
+% Same vertical separation before the example heading and after the example body
+% (so prose↔\verb|\beginBookExample| matches the gap before the next paragraph).
+\newlength{\bookExampleBlockSep}
+\setlength{\bookExampleBlockSep}{1.25\baselineskip}
+
+\newcounter{bookExample}
+\newcommand{\bookExampleLoEentry}{}
+\newcommand{\beginBookExample}[1]{%
+  \refstepcounter{bookExample}%
+  \def\bookExampleLoEentry{Example \thebookExample. #1}%
+  \par\addvspace{\bookExampleBlockSep}%
+  \noindent{\bfseries Example~\thebookExample:} #1\par
+  \nobreak\addvspace{0.35em}%
+}
+\newcommand{\finishBookExample}{%
+  \par\addvspace{\bookExampleBlockSep}%
+  % List-of-examples page must be written after the body is laid out; writing at
+  % \beginBookExample captured \thepage before breaks (e.g. LilyPond height).
+  \phantomsection
+  \addcontentsline{loe}{bookexample}{\bookExampleLoEentry}%
+}
+
+\newsavebox{\bookInlineMusicBox}
+\newcommand{\bookInlineMusicAlign}{vc}
+\newcommand{\bookInlineMusicUseVerticalCenter}{\renewcommand{\bookInlineMusicAlign}{vc}}
+\newcommand{\bookInlineMusicUseBaseline}{\renewcommand{\bookInlineMusicAlign}{baseline}}
+% Inline music at the top of a paragraph should use baseline alignment so the paragraph start stays clear.
+% Inline music after the first line should use vertical-center alignment.
+\newcommand{\beginBookInlineMusic}{%
+  \begingroup
+  % Compare expanded strings; \ifx fails here because \bookInlineMusicAlign is \long
+  % (from \newcommand) while a \def test would be short—same text, false \ifx.
+  \ifnum\pdfstrcmp{\bookInlineMusicAlign}{baseline}=0
+  \else
+    \def\preLilyPondExample{\setbox\bookInlineMusicBox=\hbox\bgroup}%
+    \def\postLilyPondExample{\egroup\raisebox{\dimexpr.5ex-.5\ht\bookInlineMusicBox\relax}{\usebox{\bookInlineMusicBox}}}%
+  \fi
+}
+\newcommand{\finishBookInlineMusic}{\endgroup}
+% lilypond-book emits \includegraphics per system; center each within the text
+% block so line-width in LilyPond cannot overrun page margins (same as Barry Book).
+\newcommand{\bookMusicExampleCenterGraphics}{%
+  \let\bookExampleIncludeGraphics\includegraphics
+  \renewcommand{\includegraphics}[2][]{%
+    \par\noindent\makebox[\linewidth][c]{\bookExampleIncludeGraphics[##1]{##2}}%
+  }%
+}
+\newcommand{\beginBookExampleMusic}{%
+  \par
+  \begingroup
+  \bookMusicExampleCenterGraphics
+  \def\betweenLilyPondSystem##1{\par\vspace{6mm}}%
+}
+\newcommand{\finishBookExampleMusic}{\par\endgroup}
+\newcommand{\betweenLilyPondSystem}[1]{\vspace{6mm}\linebreak}
+
+% ------------------------------------------------------------------
+% Tall in-flow music: fixed *height* box + stretchy glue between systems
+%
+% lilypond-book inserts \betweenLilyPondSystem between each engraved system.
+% Uses the same \bookMusicExampleCenterGraphics hook as \beginBookExampleMusic
+% so each system's \includegraphics is centered in \linewidth (matches Barry Book).
+% A height-fixed minipage with inner position \texttt{s} (stretch) plus \verb|\vfill|
+% between systems (no leading \verb|\vfill| so the block does not hang below the
+% example heading). Plain \verb|\vfil| inside \verb|\vbox| can lose to higher-order glue
+% from paragraph spacing (e.g.\ setspace), so we use \verb|\vfill| here.
+%
+% \beginFixedHeightMusicExample / \finishFixedHeightMusicExample are synonyms
+% (same behaviour: one fixed outer height, systems spaced with \verb|\vfill| inside).
+%
+% Usage:
+%   \beginStretchHeightMusicExample{0.42\textheight}
+%   % or: \beginFixedHeightMusicExample{0.42\textheight}
+%   \begin{lilypond} ... \end{lilypond}
+%   \finishStretchHeightMusicExample
+% ------------------------------------------------------------------
+\newcommand{\beginStretchHeightMusicExample}[1]{%
+  \par
+  \begingroup
+  \bookMusicExampleCenterGraphics
+  \setlength{\parskip}{0pt}%
+  \begin{minipage}[t][#1][s]{\linewidth}%
+  \def\betweenLilyPondSystem##1{\par\vfill}%
+}
+\newcommand{\finishStretchHeightMusicExample}{%
+  \par\vfill
+  \end{minipage}%
+  \endgroup
+  \par
+}
+\newcommand{\beginFixedHeightMusicExample}[1]{\beginStretchHeightMusicExample{#1}}
+\newcommand{\finishFixedHeightMusicExample}{\finishStretchHeightMusicExample}
+
+% Continuation across pages: no \newgeometry; only \clearpage when the given
+% LilyPond system index is reached. Between systems on one page, glue is \verb|\vfill|.
+\newcommand{\beginMultiPageStretchMusicExample}[2]{%
+  \begingroup
+  \bookMusicExampleCenterGraphics
+  \def\betweenLilyPondSystem##1{%
+    \par
+    \ifnum##1=#1
+      \clearpage
+      \vspace*{#2}%
+      \noindent
+    \else
+      \vfill
+    \fi
+  }%
+}
+\newcommand{\finishMultiPageStretchMusicExample}{%
+  \par
+  \endgroup
+}
+
+\newcommand{\incompleteContentNotice}{%
+\par\vspace{0.5em}
+\noindent\begingroup
+\setlength{\fboxsep}{0pt}%
+\color{bookBlack}%
+\begin{minipage}{0.88\textwidth}
+\rule{\linewidth}{0.4pt}\par
+\vspace{0.65em}
+{\bfseries Draft notice.} This chapter is still a placeholder. Replace it with your own material, or delete the notice macro once the chapter is ready.
+\vspace{0.65em}\par
+\rule{\linewidth}{0.4pt}
+\end{minipage}
+\endgroup\par\vspace{0.5em}
+}

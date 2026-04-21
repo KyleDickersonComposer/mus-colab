@@ -1,0 +1,12 @@
+\thispagestyle{empty}
+\null
+\vspace*{\fill}
+\begin{flushleft}
+\begin{minipage}{0.78\textwidth}
+This project is shared under a permissive license so that teachers, students, and curious readers can treat the manuscript as a living workshop rather than a sealed product. The prose, layout instructions, and engraved examples all travel together as \gls{plain-text} sources tracked with \gls{version-control}, which means every thoughtful correction can be reviewed without guesswork.
+
+You never have to edit anything yourself to benefit: you may simply read, listen to a friend explain a passage, or print a page for a lesson. If you \emph{do} wish to suggest a change, the same openness makes it possible for someone else to fold your idea into the next revision with credit and care.
+\end{minipage}
+\end{flushleft}
+\vspace*{\fill}
+\clearpage

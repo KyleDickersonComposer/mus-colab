@@ -1,0 +1,142 @@
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\leftmark}
+\fancyhead[LO]{\rightmark}
+\fancyfoot{}
+
+\definecolor{bookBlack}{HTML}{151515}
+\definecolor{bookGray}{HTML}{5F5F5F}
+
+\onehalfspacing
+
+\setlength{\parskip}{0.65em}
+\setlength{\parindent}{0pt}
+
+\newcommand{\frontMatterChapter}[1]{%
+  \chapter*{#1}
+  \markboth{\MakeUppercase{#1}}{\MakeUppercase{#1}}
+  \vspace{-1.25em}
+  \noindent\rule{0.72\textwidth}{0.5pt}
+  \vspace{1.5em}
+}
+
+\newcommand{\backMatterChapter}[1]{%
+  \chapter*{#1}
+  \phantomsection
+  \addcontentsline{toc}{chapter}{#1}
+  \markboth{#1}{#1}
+  \vspace{-1.25em}
+  \noindent\rule{0.72\textwidth}{0.5pt}\par
+  \vspace{1.4em}
+}
+
+\newenvironment{bookBackMatterText}{%
+  \begingroup
+  \small
+  \setstretch{1.12}
+  \setlength{\parskip}{0.75em}
+  \setlength{\parindent}{0pt}
+}{%
+  \endgroup
+}
+
+\newcounter{bookStyledListItem}
+\newenvironment{bookStyledList}[1]{%
+  \par\addvspace{1.1em}%
+  \begingroup
+  \setlength{\parskip}{0pt}%
+  \noindent{\color{bookBlack}\bfseries #1}\par\nobreak
+  \vspace{0.825em}%
+  \begin{list}{{\color{bookBlack}\bfseries\arabic{bookStyledListItem}.}}{%
+    \usecounter{bookStyledListItem}%
+    \setlength{\leftmargin}{1.85em}%
+    \setlength{\labelwidth}{1.1em}%
+    \setlength{\labelsep}{0.45em}%
+    \setlength{\itemsep}{0.55em}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\topsep}{0pt}%
+    \setlength{\partopsep}{0pt}%
+  }%
+}{%
+  \end{list}%
+  \endgroup
+  \addvspace{1.1em}%
+}
+
+\newenvironment{bookStyledBulletList}[1]{%
+  \par\addvspace{1.1em}%
+  \begingroup
+  \setlength{\parskip}{0pt}%
+  \noindent{\color{bookBlack}\bfseries #1}\par\nobreak
+  \vspace{0.825em}%
+  \begin{list}{{\color{bookBlack}\raisebox{0.15ex}{\footnotesize$\bullet$}}}{%
+    \setlength{\leftmargin}{1.85em}%
+    \setlength{\labelwidth}{1.1em}%
+    \setlength{\labelsep}{0.45em}%
+    \setlength{\itemsep}{0.55em}%
+    \setlength{\parsep}{0pt}%
+    \setlength{\topsep}{0pt}%
+    \setlength{\partopsep}{0pt}%
+  }%
+}{%
+  \end{list}%
+  \endgroup
+  \addvspace{1.1em}%
+}
+
+\newglossarystyle{bookdefinition}{%
+  \setglossarystyle{list}%
+  \renewenvironment{theglossary}{%
+    \begin{bookBackMatterText}%
+  }{%
+    \end{bookBackMatterText}%
+  }%
+  \renewcommand*{\glossaryheader}{}%
+  \renewcommand*{\glsgroupheading}[1]{}%
+  \renewcommand*{\glossentry}[2]{%
+    \noindent\hangindent=1.25em\hangafter=1\relax
+    {\bfseries \glsentryname{##1}} - \glossentrydesc{##1}\par
+    \vspace{0.9em}%
+  }%
+  \renewcommand*{\subglossentry}[3]{%
+    \glossentry{##2}{##3}%
+  }%
+}
+
+\defbibheading{bookbibliography}[\bibname]{%
+  \backMatterChapter{#1}%
+}
+
+\renewcommand*{\bibfont}{\small\setstretch{1.12}}
+\setlength{\bibhang}{1.4em}
+\setlength{\bibitemsep}{0.85em}
+\AtEveryBibitem{%
+  \clearfield{isbn}%
+}
+
+\makeatletter
+\renewcommand\tableofcontents{%
+  \frontMatterChapter{\contentsname}%
+  \@starttoc{toc}%
+}
+\renewcommand*\l@part[2]{%
+  \ifnum \c@tocdepth >-2\relax
+    \addpenalty{-\@highpenalty}%
+    \addvspace{1.5em plus 0.2em}%
+    \begingroup
+      \parindent \z@
+      \rightskip \@pnumwidth
+      \parfillskip -\@pnumwidth
+      \leavevmode
+      \large\bfseries\scshape
+      #1\nobreak\hfil\nobreak\hb@xt@\@pnumwidth{\hss #2}\par
+      \vskip 0.25em
+      \hrule height 0.4pt
+      \vskip 0.6em
+      \nobreak
+    \endgroup
+  \fi}
+\makeatother

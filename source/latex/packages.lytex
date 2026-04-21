@@ -1,0 +1,37 @@
+\usepackage[
+    top=2cm,
+    bottom=1cm,
+    left=3.5cm,
+    right=3.5cm,
+    paperwidth=8.5in,
+    paperheight=11in,
+    heightrounded,
+    includefoot,
+    marginparwidth=0pt,
+    marginparsep=0pt
+]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{textcomp}
+\usepackage{pgf}
+\usepackage{etoolbox}
+\usepackage{glossaries}
+\usepackage{makeidx}
+\usepackage[backend=biber, style=authoryear]{biblatex}
+\usepackage[hidelinks]{hyperref}
+\usepackage{bookmark}
+
+\makeglossaries
+\makeindex
+\addbibresource{references.bib}
+\input{./source/latex/glossary.lytex}
+\input{./source/latex/names.lytex}

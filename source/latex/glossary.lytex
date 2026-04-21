@@ -1,0 +1,24 @@
+\newglossaryentry{open-source}{%
+  name={open source},
+  description={a way of working where a project's source files---not just the finished output---are shared openly so anyone can see how things were made, suggest fixes, or adapt the material for their own purposes, within the terms of the attached license.}
+}
+
+\newglossaryentry{version-control}{%
+  name={version control},
+  description={software that records the history of every saved change to a project. Rather than juggling files named ``final'' and ``final-revised,'' the system remembers what changed, when, and who changed it---making collaboration far more reliable than emailing a document back and forth.}
+}
+
+\newglossaryentry{github}{%
+  name={GitHub},
+  description={a website where open projects host their files, discussions, and proposed edits. Some visitors only browse; others leave comments, open conversations, or submit suggested changes. Many teams also use GitHub to automatically rebuild a project whenever the main draft is updated.}
+}
+
+\newglossaryentry{plain-text}{%
+  name={plain text},
+  description={writing stored as ordinary characters: letters, numbers, punctuation---nothing more. Because both humans and software can read it directly, plain text works cleanly with version histories, spell-checkers, and layout tools, without locking your words into a proprietary format.}
+}
+
+\newglossaryentry{permissively-licensed}{%
+  name={permissively licensed},
+  description={released under terms designed to make reuse easy. Most permissive licenses ask only that you preserve author credits and include the license text with anything you redistribute. Read the actual license file for precise wording.}
+}
