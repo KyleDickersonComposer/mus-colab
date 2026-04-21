@@ -17,7 +17,11 @@ BIBTEX = biber
 MAKEGLOSSARIES = makeglossaries
 LATEX_FLAGS = -output-directory=$(OUTPUT_DIR) -interaction=nonstopmode
 
-.PHONY: clean docx open pdf require-pandoc
+.PHONY: clean docx docker-pull open pdf require-pandoc
+
+# Pull the toolchain image once into Docker Desktop (same platform as make pdf).
+docker-pull:
+	docker pull --platform linux/amd64 $(DOCKER_LILYPOND_IMAGE)
 
 pdf:
 	docker run --rm --platform linux/amd64 --pull missing \

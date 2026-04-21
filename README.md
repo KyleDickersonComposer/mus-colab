@@ -1,54 +1,62 @@
 # mus-colab
 
-A **starter template** for your own **open, free, permissively licensed** music documents—scores, methods, coursework, or anything you want to ship as a proper PDF—without forcing contributors to install LilyPond and a full LaTeX stack by hand.
+A **GitHub template** for open, permissively licensed **music + prose books** (methods, coursework, anthologies, anything you want as a real PDF) without asking every contributor to install LilyPond and a full LaTeX stack locally.
 
-Use Git for collaboration, **Docker + Make** for identical local and CI builds, and **GitHub Actions** to publish PDFs automatically. Fork or copy this repo, rename things for your project, replace the placeholder book sources with your content, and keep the same flow.
+On the GitHub repo page, choose **Use this template** to create a new repository, then rename branding, swap in your chapters, and keep the same build story. Collaboration stays in Git; **Docker + Make** keep local builds aligned with CI; **GitHub Actions** can publish each successful build of `main` as a downloadable PDF on a `latest` release.
 
 ## What you get
 
-- **One command to build**: `make pdf` runs everything inside a pinned container image (LilyPond, `lilypond-book`, LaTeX, bibliography tooling).
-- **CI that matches your laptop**: the workflow on `main` runs the same `make pdf`, then attaches a timestamped PDF to a `latest` GitHub Release so readers can grab builds without cloning.
-- **A conventional repo layout** for `lilypond-book` + LaTeX monorepos—easy to grow with parts, chapters, and shared notation styles.
+- **One command**: `make pdf` runs LilyPond, lilypond-book, and LaTeX inside a pinned Docker image (same image CI uses).
+- **Words and music separated**: chapter commentary lives in small `.lytex` files; engraved fragments live under `inline/`, `excerpt/`, and `full-music/` so editors and engravers rarely edit the same lines.
+- **House style for examples**: numbered musical examples, optional list at the front, centered systems where it matters, inline music that can follow baseline or vertical-center rules, and tall excerpts in a **fixed-height** frame with stretch **between** systems (not one dead zone under the last staff).
+- **Shared engraving defaults**: LilyPond include files for block vs inline snippets (staff size, line width, no default LilyPond footer on snippets). Put `\version` in each fragment you care about; shared layout stays in the includes.
+- **Bibliography + glossary hooks** wired the usual LaTeX way.
 
-This project is not tied to any specific pedagogy or existing book; it is only the **machinery and layout** you can reuse for *your* document.
+This repo is **machinery and sample content**, not a tied-to-one-title product. Delete or replace the introduction walkthrough when you are ready.
 
-## Repository layout (template)
+## Repository layout
 
-Organize sources like this (add files as you grow the book):
+| Area | Role |
+|------|------|
+| `main.lytex` | Spine only: document setup, shared LaTeX inputs, front matter, chapter order. Keep long prose out of here. |
+| Root front matter | `title-page.lytex`, `source-note.lytex`, `preface.lytex` next to the spine. |
+| `chapters/<name>/` | Section prose as small `.lytex` files. |
+| `chapters/<name>/inline/`, `excerpt/`, `full-music/` | Music-only fragments. Prose files should pull them in by reference so engraving and text churn independently. |
+| `source/latex/` | Packages, page style, **music-examples** (numbered examples, tall fixed-height blocks, multi-page stretch helpers), chord helpers, glossary inputs. |
+| `source/lily/` | Shared LilyPond layout for block and inline snippets (Makefile adds this tree to LilyPond’s include path). |
+| `references.bib` | Bibliography source for `biber`. |
+| `bin/` | PDF and intermediate build output (ignored by git; created by `make pdf`). |
 
-- `main.lytex` — spine only: document class, shared `\input` for LaTeX primitives, then an ordered list of chapter prose files (avoid long body text here)
-- `title-page.lytex`, `source-note.lytex`, `preface.lytex` — front-of-book pieces kept at the repository root next to `main.lytex`
-- `chapters/<chapter-name>/` — section prose as small `.lytex` files at the chapter root
-- `chapters/<chapter-name>/inline/`, `excerpt/`, `full-music/` — **music-only** fragments (LilyPond blocks, tall height-box spreads). Prose files should `\input` them so text edits and engraving edits rarely touch the same file
-- `source/latex/` — shared LaTeX: packages, page style, numbered examples, `\MusicChord` helpers, glossary entries. Tall LilyPond blocks use `\beginStretchHeightMusicExample{<dim>}` … `\finishStretchHeightMusicExample`: a fixed-height `\vbox` with `\vfil` between systems (normal page margins, no `\newgeometry`)
-- `source/lily/` — shared LilyPond layout snippets (`\include` targets; the Makefile passes `-I` for `source/`)
-- `references.bib` — bibliography for `biber`
-- `bin/` — build output (gitignored; produced by `make pdf`)
-
-The repository ships with a minimal sample book so `make pdf` works immediately; swap in your own chapters and tune `source/` as the document grows.
+The sample introduction demonstrates inline cells, a block excerpt, and a tall in-flow example. Treat it as living documentation, then replace it with your own material.
 
 ## Building (Docker + Make)
 
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or any environment where `docker` runs) so contributors share one toolchain.
+- [Docker](https://docs.docker.com/get-docker/) (e.g. Docker Desktop on macOS). The Makefile requests `linux/amd64` so Apple Silicon Macs match CI via emulation when needed.
+
+### Pull the build image (once)
+
+After Docker Desktop is running, pull the toolchain image **once** so it shows under **Images** and the first `make pdf` does not spend forever on a surprise download:
+
+```sh
+make docker-pull
+```
+
+That uses the same `DOCKER_LILYPOND_IMAGE` (and `linux/amd64` platform) as `make pdf`. `make pdf` still passes `--pull missing`, so pre-pull is optional; it is just the friendly explicit step for collaborators. If you override the image when building, run `make docker-pull DOCKER_LILYPOND_IMAGE=your-registry/your-image:tag` instead.
 
 ### Commands
 
 ```sh
-make pdf    # build bin/main.pdf inside the container
-make open   # open bin/main.pdf (macOS)
-make clean  # remove bin/ and common temp files
+make docker-pull   # optional: pull toolchain image once into Docker Desktop
+make pdf           # writes bin/main.pdf
+make open          # opens bin/main.pdf (macOS)
+make clean         # removes bin/ and common temp files
 ```
 
-What `make pdf` does:
+`make pdf` mounts the repo in the container, runs **lilypond-book** on `main.lytex` into `bin/`, copies the bibliography in place, then runs **pdflatex**, **biber**, **makeglossaries**, and enough extra LaTeX passes for a stable PDF.
 
-1. Runs `kyledickersoncomposer/docker-lilypond:latest` with the repo mounted at `/workdir`.
-2. Runs `lilypond-book` on `main.lytex`, emitting TeX and processed notation into `bin/`.
-3. Copies `references.bib` into `bin/` for the LaTeX run.
-4. Runs `pdflatex`, `biber`, `makeglossaries`, and further `pdflatex` passes until the PDF is stable.
-
-Use your own image when you are ready:
+Override the image when you maintain your own toolchain:
 
 ```sh
 make pdf DOCKER_LILYPOND_IMAGE=your-registry/your-image:tag
@@ -56,29 +64,25 @@ make pdf DOCKER_LILYPOND_IMAGE=your-registry/your-image:tag
 
 ### Troubleshooting
 
-- If the container never starts, confirm Docker is running.
-- LaTeX errors usually show up in `bin/main.log` after a partial build.
+- If nothing runs, confirm the Docker daemon is up.
+- LaTeX diagnostics land in `bin/main.log` after a partial build.
 
 ## GitHub Actions
 
-On every push to `main`, [.github/workflows/main.yml](.github/workflows/main.yml):
+On every push to `main`, [.github/workflows/main.yml](.github/workflows/main.yml) runs the same `make pdf`, renames the artifact with a timestamp, and uploads it to the **latest** release (via [ncipollo/release-action](https://github.com/ncipollo/release-action)) so readers can download a PDF without cloning.
 
-1. Checks out the repository.
-2. Runs `make pdf` (same Docker image as local).
-3. Copies `bin/main.pdf` to a timestamped filename.
-4. Publishes that file to the GitHub Release tagged `latest` via [`ncipollo/release-action`](https://github.com/ncipollo/release-action).
+Keep the **Makefile** as the single source of truth for how the book is built; change the workflow when the build contract changes.
 
-Treat the **Makefile** as the contract between humans and CI; adjust the workflow only when you change how the book is built.
+## After you use the template
 
-## Making this yours
-
-- Rename the PDF prefix in the workflow, release title, and any `pandoc` metadata in the `Makefile` (`docx` target) to match your project.
-- Replace `LICENSE` if you need a different permissive license (keep SPDX clarity for downstream users).
-- Point `DOCKER_LILYPOND_IMAGE` at an image you control if you customize the TeX or LilyPond versions.
+- Rename release titles, artifact prefixes, and any `docx` export metadata in the `Makefile` to match your project (search for `mus-colab`).
+- Update [.github/workflows/main.yml](.github/workflows/main.yml) release name/body strings if you do not want “mus-colab” in the GitHub UI.
+- Replace `LICENSE` only if you need a different permissive choice; keep licensing obvious for downstream forks.
+- Point `DOCKER_LILYPOND_IMAGE` at an image you control when you pin different TeX or LilyPond versions.
 
 ## Contributing
 
-Improvements to the template itself (clearer defaults, safer CI, better docs) are welcome via issues and pull requests.
+Template improvements (clearer defaults, safer CI, better docs) are welcome via issues and pull requests.
 
 ## License
 
