@@ -1,5 +1,6 @@
 \section{Working with small prose fragments}
 
+
 Each chapter section file is encouraged to stay modest in length: one named section, or two sections that truly belong in the same conversation. The point is humane scale. A singer scanning the tree on a small screen should recognize the chapter they need without scrolling through unrelated material, and a proofreader can open only the scene they promised to check.
 
 \textbf{Chord symbol example.} When you describe harmony in words, you can still keep symbols consistent. For instance, you might write ``listen for a \MusicChord{root=D, acc=flat, quality=dom, seven=7} color here'' and let the template handle accidentals and spacing instead of hand-formatting every glyph.
