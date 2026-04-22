@@ -49,6 +49,9 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: latest
+          # Re-pin the release + `latest` tag to this push; without `commit`, updates only
+          # refresh assets and GitHub still shows the old target (stale zipball + “N commits behind”).
+          commit: ${{ github.sha }}
           name: "Latest mus-colab PDF"
           artifacts: "${{ env.PDF_NAME }},${{ env.SOURCE_ZIP_NAME }}"
           allowUpdates: true
