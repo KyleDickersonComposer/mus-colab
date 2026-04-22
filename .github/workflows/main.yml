@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build PDF with Docker
         run: |
@@ -45,20 +45,37 @@ jobs:
           test -f "${{ env.SOURCE_ZIP_NAME }}"
           ls -lh "${{ env.PDF_NAME }}" "${{ env.SOURCE_ZIP_NAME }}"
 
-      - name: Publish PDF to Latest Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: latest
-          # Re-pin the release + `latest` tag to this push; without `commit`, updates only
-          # refresh assets and GitHub still shows the old target (stale zipball + “N commits behind”).
-          commit: ${{ github.sha }}
-          name: "Latest mus-colab PDF"
-          artifacts: "${{ env.PDF_NAME }},${{ env.SOURCE_ZIP_NAME }}"
-          allowUpdates: true
-          removeArtifacts: true
-          replacesArtifacts: true
-          draft: false
-          prerelease: false
-          makeLatest: true
-          body: "Latest PDF plus a zip of tracked source at the same commit (git archive)."
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish latest release (gh + git tag)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET: ${{ github.sha }}
+          PDF_NAME: ${{ env.PDF_NAME }}
+          SOURCE_ZIP_NAME: ${{ env.SOURCE_ZIP_NAME }}
+        run: |
+          set -euo pipefail
+          TAG=latest
+          TITLE='Latest mus-colab PDF'
+          NOTES="PDF and tracked source (git archive) at commit ${TARGET:0:7}."
+
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git tag -f "$TAG" "$TARGET"
+          git push --force origin "refs/tags/$TAG"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --target "$TARGET" --title "$TITLE" --notes "$NOTES"
+            asset_ids=()
+            mapfile -t asset_ids < <(gh api "repos/${GH_REPO}/releases/tags/${TAG}" --jq '.assets[].id')
+            for id in "${asset_ids[@]}"; do
+              [[ -n "$id" ]] || continue
+              gh api --method DELETE "repos/${GH_REPO}/releases/assets/${id}"
+            done
+            gh release upload "$TAG" "$PDF_NAME" "$SOURCE_ZIP_NAME"
+          else
+            gh release create "$TAG" "$PDF_NAME" "$SOURCE_ZIP_NAME" \
+              --target "$TARGET" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --latest
+          fi
