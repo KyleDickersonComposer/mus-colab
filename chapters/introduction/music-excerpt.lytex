@@ -2,6 +2,9 @@
 
 Printed block examples share one house style: comfortable spacing around the example, each system centered in the text block where that matters, and a running list at the front of the book so readers can find figures by number.
 
-\input{./chapters/introduction/excerpt/c-major-scale.lytex}
+\beginBookExample{C major scale in whole notes}
+\beginBookExampleMusic
+\lilypondfile{chapters/introduction/excerpt/c-major-scale.ly}
+\finishBookExampleMusic                                                                                     \finishBookExample
 
 Shorter quotations of music slipped into other sections should follow the same pattern: keep the prose in one file and include a dedicated fragment from the inline or excerpt area.

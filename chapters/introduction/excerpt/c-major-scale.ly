@@ -4,5 +4,5 @@
   \clef treble
   \key c \major
   \time 4/4
-  c1 | d | e | f | g | a | b | c \bar "||"
+  c1 | d | e e | f | g | a | b | c \bar "||"
 }

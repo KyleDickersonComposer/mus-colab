@@ -1,6 +1,3 @@
-\beginBookExample{Scale Etude}
-\beginFixedHeightMusicExample{0.50\textheight}
-\begin{lilypond}
 \version "2.24.0"
 \include "lily/book-example.ily"
 
@@ -24,6 +21,3 @@
   f( g a b c d e f) | e( d c b a g f e) | d( e f g a b c d) | c2 r2 | \bar "|."
 
 }
-\end{lilypond}
-\finishFixedHeightMusicExample
-\finishBookExample

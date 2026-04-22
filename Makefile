@@ -11,217 +11,72 @@ MAIN = main
 OUTPUT_DIR = bin
 LILYPOND_BOOK = lilypond-book
 
+# Promote LilyPond warnings (e.g. bar checks) to fatal errors for excerpt/inline + lilypond-book.
+LILYPOND_FLAGS ?= -dwarning-as-error
+
+# lilypond-book hides per-snippet stderr unless set (default was none).
+LILYBOOK_LILY_LOGLEVEL ?= WARNING
+
+# Parallel native lilypond for excerpt/inline check and lily-check second pass.
+LILYPOND_CHECK_JOBS ?= 8
+LILY_CHECK_JOBS ?= 8
+
 # LaTeX compiler
 LATEX = pdflatex
 BIBTEX = biber
 MAKEGLOSSARIES = makeglossaries
 LATEX_FLAGS = -output-directory=$(OUTPUT_DIR) -interaction=nonstopmode
 
-.PHONY: check-ly clean docx docker-pull lily open pdf require-pandoc
-
-# Pull the toolchain image once into Docker Desktop (same platform as make pdf).
 docker-pull:
 	docker pull --platform linux/amd64 $(DOCKER_LILYPOND_IMAGE)
 
+DOCKER_RUN = docker run --rm --platform linux/amd64 --pull missing \
+	-v "$(BOOK_ROOT):/workdir" -w /workdir
+DOCKER_ENV_COMMON = \
+	-e MAIN=$(MAIN) \
+	-e OUTPUT_DIR=$(OUTPUT_DIR) \
+	-e LILYPOND_BOOK=$(LILYPOND_BOOK) \
+	-e LILYPOND_FLAGS="$(LILYPOND_FLAGS)" \
+	-e LILYBOOK_LILY_LOGLEVEL=$(LILYBOOK_LILY_LOGLEVEL) \
+	-e LATEX=$(LATEX) \
+	-e BIBTEX=$(BIBTEX) \
+	-e MAKEGLOSSARIES=$(MAKEGLOSSARIES) \
+	-e LATEX_FLAGS="$(LATEX_FLAGS)" \
+	-e LILYPOND_CHECK_JOBS=$(LILYPOND_CHECK_JOBS)
+
+.PHONY: _lily_snippets check-ly clean docx docker-pull lily lily-check open pdf require-pandoc
+
+# Excerpt/inline .ly parallel check → lilypond-book → LaTeX (see scripts/docker/run-pdf.sh).
 pdf:
-	docker run --rm --platform linux/amd64 --pull missing \
-		-v "$(BOOK_ROOT):/workdir" -w /workdir \
+	$(DOCKER_RUN) $(DOCKER_ENV_COMMON) \
 		$(DOCKER_LILYPOND_IMAGE) \
-		sh -lc '\
-			set -eu; \
-			LOG_DIR="$(OUTPUT_DIR)/build-logs"; \
-			cleanup() { \
-				find . -maxdepth 1 -name "tmp*" -type f -delete 2>/dev/null; \
-				find . -maxdepth 1 -name "*.tmp" -type f -delete 2>/dev/null; \
-			}; \
-			summarize_failure() { \
-				echo ""; \
-				echo "================ FATAL SUMMARY ================"; \
-				found=0; \
-				for file in "$$LOG_DIR/lilypond-book.log" "$$LOG_DIR/pdflatex-pass1.log" "$$LOG_DIR/biber.log" "$$LOG_DIR/makeglossaries.log" "$$LOG_DIR/pdflatex-pass2.log" "$$LOG_DIR/pdflatex-pass3.log" "$(OUTPUT_DIR)/$(MAIN).log" "$(OUTPUT_DIR)/$(MAIN).blg"; do \
-					[ -f "$$file" ] || continue; \
-					matches="$$(awk "BEGIN{IGNORECASE=1; ctx=0} /warning:|^! |fatal error|error:|undefined control sequence|emergency stop|ERROR -|unrecognized option|non-zero exit status/ {print NR \":\" \$$0; ctx=2; next} ctx>0 {print NR \":\" \$$0; ctx--;}" "$$file")"; \
-					[ -n "$$matches" ] || continue; \
-					found=1; \
-					echo "-- $$file --"; \
-					printf "%s\n" "$$matches"; \
-					if [ "$$file" = "$$LOG_DIR/lilypond-book.log" ]; then \
-						failing_ref="$$(awk "match(\$$0, /[[:alnum:]_\/.-]*lily-[0-9a-f]+\\.ly:[0-9]+:[0-9]+:/) {print substr(\$$0, RSTART, RLENGTH); exit}" "$$file")"; \
-						if [ -n "$$failing_ref" ]; then \
-							fr="$$failing_ref"; \
-							fr="$${fr%:}"; \
-							tmp1="$${fr%:*}"; \
-							gen_line="$${tmp1##*:}"; \
-							gen_ly="$${tmp1%:*}"; \
-							ly_base="$$(basename "$$gen_ly" .ly)"; \
-							owner_tex="$$(grep -R -l -F "$${ly_base}-systems.tex" "$(OUTPUT_DIR)" 2>/dev/null | head -n 1)"; \
-							if [ -z "$$owner_tex" ]; then \
-								owner_tex="$$(grep -R -l -F "$$gen_ly" "$(OUTPUT_DIR)" 2>/dev/null | head -n 1)"; \
-							fi; \
-							echo "Likely generated snippet: $(OUTPUT_DIR)/$$gen_ly:$$gen_line"; \
-							if [ -n "$$owner_tex" ]; then \
-								ot="$$owner_tex"; \
-								case "$$ot" in "$(OUTPUT_DIR)"/*) sg="$${ot#$(OUTPUT_DIR)/}";; *) sg="$$ot";; esac; \
-								case "$$sg" in *.tex) source_guess="$${sg%.tex}.lytex";; *) source_guess="$$sg";; esac; \
-								echo "Likely source file: $$source_guess"; \
-							else \
-								echo "Likely source file: (no $$ly_base-systems.tex in $(OUTPUT_DIR); see .lytex lines below)"; \
-								echo "Recent .lytex paths in lilypond-book.log:"; \
-								grep -E -o '[A-Za-z0-9_./-]+\.lytex' "$$file" 2>/dev/null | tail -n 12 | while read -r p; do echo "  $$p"; done || true; \
-								note_line="$$(awk "hit && !seen {sub(/^[[:space:]]+/, \"\"); sub(/[[:space:]]+$$/, \"\"); print; exit} /fatal error: barcheck failed/ {hit=1}" "$$file")"; \
-								if [ -n "$$note_line" ]; then \
-									source_hits="$$(grep -R -n -F "$$note_line" chapters frontmatter source main.lytex preface.lytex 2>/dev/null | head -n 5)"; \
-									if [ -n "$$source_hits" ]; then \
-										echo "Source text matches:"; \
-										printf "%s\n" "$$source_hits"; \
-									fi; \
-								fi; \
-							fi; \
-							echo ""; echo "--- lilypond-book.log (last 40 lines) ---"; tail -n 40 "$$file" 2>/dev/null || true; \
-							if printf "%s\n" "$$matches" | grep -qi "syntax error"; then \
-								echo ""; echo "Hint: LilyPond header values must be quoted strings, e.g. title = \"Scale Etude\", composer = \"You\"."; \
-							fi; \
-						fi; \
-					fi; \
-				done; \
-				if [ "$$found" -eq 0 ]; then \
-					echo "No fatal diagnostics were extracted from known logs."; \
-					echo "Check $(OUTPUT_DIR)/build-logs/ and $(OUTPUT_DIR)/$(MAIN).log for full output."; \
-				fi; \
-				echo "==============================================="; \
-			}; \
-			on_exit() { \
-				status=$$?; \
-				if [ "$$status" -ne 0 ]; then \
-					summarize_failure; \
-				fi; \
-				cleanup; \
-				exit "$$status"; \
-			}; \
-			trap on_exit EXIT; \
-			mkdir -p $(OUTPUT_DIR); \
-			mkdir -p "$$LOG_DIR"; \
-			echo ""; echo "================ check-ly (excerpt/inline .ly) ================"; \
-			mkdir -p $(OUTPUT_DIR)/lycheck; \
-			find chapters -type f \( -path "*/excerpt/*.ly" -o -path "*/inline/*.ly" \) | sort | while IFS= read -r f; do \
-				echo ""; echo "==== lilypond $$f ===="; \
-				b="$$(basename "$$f" .ly)"; \
-				lilypond -dwarning-as-error -I /workdir -I /workdir/source -I /workdir/source/lilyjazz-styles -o "/workdir/$(OUTPUT_DIR)/lycheck/$$b" "/workdir/$$f"; \
-			done; \
-			echo ""; echo "================ lilypond-book (snippets) ================"; \
-			$(LILYPOND_BOOK) --pdf --process="lilypond -dwarning-as-error" --output=$(OUTPUT_DIR) -I /workdir -I /workdir/source -I /workdir/source/lilyjazz-styles $(MAIN).lytex >"$$LOG_DIR/lilypond-book.log" 2>&1; \
-			echo "================ LaTeX / BibTeX / glossaries ================="; \
-			cp references.bib $(OUTPUT_DIR)/references.bib; \
-			echo "Building $(MAIN).pdf (pdflatex pass 1)..."; \
-			$(LATEX) $(LATEX_FLAGS) $(OUTPUT_DIR)/$(MAIN).tex >"$$LOG_DIR/pdflatex-pass1.log" 2>&1; \
-			( cd $(OUTPUT_DIR) && $(BIBTEX) $(MAIN) ) >"/workdir/$$LOG_DIR/biber.log" 2>&1; \
-			( cd $(OUTPUT_DIR) && $(MAKEGLOSSARIES) $(MAIN) ) >"/workdir/$$LOG_DIR/makeglossaries.log" 2>&1; \
-			cd /workdir; \
-			$(LATEX) $(LATEX_FLAGS) $(OUTPUT_DIR)/$(MAIN).tex >"$$LOG_DIR/pdflatex-pass2.log" 2>&1; \
-			$(LATEX) $(LATEX_FLAGS) $(OUTPUT_DIR)/$(MAIN).tex >"$$LOG_DIR/pdflatex-pass3.log" 2>&1; \
-			echo "Build complete! Output: $(OUTPUT_DIR)/$(MAIN).pdf"'
+		bash /workdir/scripts/docker/run-pdf.sh
 
-# Snippets only: same lilypond-book step as pdf, with DEBUG log (maps snippets to .lytex better).
-# Does not run pdflatex.
-lily:
-	docker run --rm --platform linux/amd64 --pull missing \
-		-v "$(BOOK_ROOT):/workdir" -w /workdir \
-		$(DOCKER_LILYPOND_IMAGE) \
-		sh -lc '\
-			set -eu; \
-			LOG_DIR="$(OUTPUT_DIR)/build-logs"; \
-			cleanup() { \
-				find . -maxdepth 1 -name "tmp*" -type f -delete 2>/dev/null; \
-				find . -maxdepth 1 -name "*.tmp" -type f -delete 2>/dev/null; \
-			}; \
-			summarize_failure() { \
-				echo ""; \
-				echo "================ FATAL SUMMARY ================"; \
-				found=0; \
-				for file in "$$LOG_DIR/lilypond-book.log" "$$LOG_DIR/pdflatex-pass1.log" "$$LOG_DIR/biber.log" "$$LOG_DIR/makeglossaries.log" "$$LOG_DIR/pdflatex-pass2.log" "$$LOG_DIR/pdflatex-pass3.log" "$(OUTPUT_DIR)/$(MAIN).log" "$(OUTPUT_DIR)/$(MAIN).blg"; do \
-					[ -f "$$file" ] || continue; \
-					matches="$$(awk "BEGIN{IGNORECASE=1; ctx=0} /warning:|^! |fatal error|error:|undefined control sequence|emergency stop|ERROR -|unrecognized option|non-zero exit status/ {print NR \":\" \$$0; ctx=2; next} ctx>0 {print NR \":\" \$$0; ctx--;}" "$$file")"; \
-					[ -n "$$matches" ] || continue; \
-					found=1; \
-					echo "-- $$file --"; \
-					printf "%s\n" "$$matches"; \
-					if [ "$$file" = "$$LOG_DIR/lilypond-book.log" ]; then \
-						failing_ref="$$(awk "match(\$$0, /[[:alnum:]_\/.-]*lily-[0-9a-f]+\\.ly:[0-9]+:[0-9]+:/) {print substr(\$$0, RSTART, RLENGTH); exit}" "$$file")"; \
-						if [ -n "$$failing_ref" ]; then \
-							fr="$$failing_ref"; \
-							fr="$${fr%:}"; \
-							tmp1="$${fr%:*}"; \
-							gen_line="$${tmp1##*:}"; \
-							gen_ly="$${tmp1%:*}"; \
-							ly_base="$$(basename "$$gen_ly" .ly)"; \
-							owner_tex="$$(grep -R -l -F "$${ly_base}-systems.tex" "$(OUTPUT_DIR)" 2>/dev/null | head -n 1)"; \
-							if [ -z "$$owner_tex" ]; then \
-								owner_tex="$$(grep -R -l -F "$$gen_ly" "$(OUTPUT_DIR)" 2>/dev/null | head -n 1)"; \
-							fi; \
-							echo "Likely generated snippet: $(OUTPUT_DIR)/$$gen_ly:$$gen_line"; \
-							if [ -n "$$owner_tex" ]; then \
-								ot="$$owner_tex"; \
-								case "$$ot" in "$(OUTPUT_DIR)"/*) sg="$${ot#$(OUTPUT_DIR)/}";; *) sg="$$ot";; esac; \
-								case "$$sg" in *.tex) source_guess="$${sg%.tex}.lytex";; *) source_guess="$$sg";; esac; \
-								echo "Likely source file: $$source_guess"; \
-							else \
-								echo "Likely source file: (no $$ly_base-systems.tex in $(OUTPUT_DIR); see .lytex lines below)"; \
-								echo "Recent .lytex paths in lilypond-book.log:"; \
-								grep -E -o '[A-Za-z0-9_./-]+\.lytex' "$$file" 2>/dev/null | tail -n 12 | while read -r p; do echo "  $$p"; done || true; \
-								note_line="$$(awk "hit && !seen {sub(/^[[:space:]]+/, \"\"); sub(/[[:space:]]+$$/, \"\"); print; exit} /fatal error: barcheck failed/ {hit=1}" "$$file")"; \
-								if [ -n "$$note_line" ]; then \
-									source_hits="$$(grep -R -n -F "$$note_line" chapters frontmatter source main.lytex preface.lytex 2>/dev/null | head -n 5)"; \
-									if [ -n "$$source_hits" ]; then \
-										echo "Source text matches:"; \
-										printf "%s\n" "$$source_hits"; \
-									fi; \
-								fi; \
-							fi; \
-							echo ""; echo "--- lilypond-book.log (last 40 lines) ---"; tail -n 40 "$$file" 2>/dev/null || true; \
-							if printf "%s\n" "$$matches" | grep -qi "syntax error"; then \
-								echo ""; echo "Hint: LilyPond header values must be quoted strings, e.g. title = \"Scale Etude\", composer = \"You\"."; \
-							fi; \
-						fi; \
-					fi; \
-				done; \
-				if [ "$$found" -eq 0 ]; then \
-					echo "No fatal diagnostics were extracted from known logs."; \
-					echo "Check $(OUTPUT_DIR)/build-logs/ and $(OUTPUT_DIR)/$(MAIN).log for full output."; \
-				fi; \
-				echo "==============================================="; \
-			}; \
-			on_exit() { \
-				status=$$?; \
-				if [ "$$status" -ne 0 ]; then \
-					summarize_failure; \
-				fi; \
-				cleanup; \
-				exit "$$status"; \
-			}; \
-			trap on_exit EXIT; \
-			mkdir -p $(OUTPUT_DIR); \
-			mkdir -p "$$LOG_DIR"; \
-			echo ""; echo "================ make lily: lilypond-book (DEBUG log) ================="; \
-			$(LILYPOND_BOOK) --pdf --loglevel=DEBUG --process="lilypond -dwarning-as-error" --output=$(OUTPUT_DIR) -I /workdir -I /workdir/source -I /workdir/source/lilyjazz-styles $(MAIN).lytex >"$$LOG_DIR/lilypond-book.log" 2>&1; \
-			echo ""; echo "lilypond-book: snippets OK."; \
-			'
-
-# Same excerpt/inline pass as the start of `make pdf` (native lilypond, real .ly paths in errors).
-# Useful alone for a quick check without lilypond-book / LaTeX.
+# Same excerpt/inline pass as the start of `make pdf` (no lilypond-book / LaTeX).
 check-ly:
-	docker run --rm --platform linux/amd64 --pull missing \
-		-v "$(BOOK_ROOT):/workdir" -w /workdir \
+	$(DOCKER_RUN) $(DOCKER_ENV_COMMON) \
 		$(DOCKER_LILYPOND_IMAGE) \
-		sh -lc '\
-			set -eu; \
-			mkdir -p $(OUTPUT_DIR)/lycheck; \
-			find chapters -type f \( -path "*/excerpt/*.ly" -o -path "*/inline/*.ly" \) | sort | while IFS= read -r f; do \
-				echo ""; echo "==== lilypond $$f ===="; \
-				b="$$(basename "$$f" .ly)"; \
-				lilypond -dwarning-as-error -I /workdir -I /workdir/source -I /workdir/source/lilyjazz-styles -o "/workdir/$(OUTPUT_DIR)/lycheck/$$b" "/workdir/$$f"; \
-			done; \
-			echo ""; echo "check-ly: all excerpt/inline .ly files OK."; \
-			'
+		bash /workdir/scripts/docker/run-check-excerpt-inline.sh
+
+# Strict lilypond-book: drop cached lily-*.ly, book snippets, then parallel lilypond on each lily-*.ly.
+# If you only edit a file \include'd from a \lilypondfile{*.ly} parent, run this after edits so
+# lilypond-book cannot skip stale snippets.
+lily-check:
+	@$(MAKE) _lily_snippets LILYBOOK_LOGLEVEL=PROGRESS LILY_SNIPPET_STRICT=1
+
+# lilypond-book only, DEBUG log (maps snippets to .lytex). No excerpt/inline pass, no LaTeX.
+lily:
+	@$(MAKE) _lily_snippets LILYBOOK_LOGLEVEL=DEBUG LILY_SNIPPET_STRICT=0
+
+_lily_snippets: LILYBOOK_LOGLEVEL ?= PROGRESS
+_lily_snippets: LILY_SNIPPET_STRICT ?= 0
+_lily_snippets:
+	$(DOCKER_RUN) $(DOCKER_ENV_COMMON) \
+		-e LILYBOOK_LOGLEVEL=$(LILYBOOK_LOGLEVEL) \
+		-e LILY_SNIPPET_STRICT=$(LILY_SNIPPET_STRICT) \
+		-e LILY_CHECK_JOBS=$(LILY_CHECK_JOBS) \
+		$(DOCKER_LILYPOND_IMAGE) \
+		bash /workdir/scripts/docker/run-lily-snippets.sh
 
 require-pandoc:
 	@command -v pandoc >/dev/null 2>&1 || { \

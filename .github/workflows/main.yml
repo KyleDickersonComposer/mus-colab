@@ -23,8 +23,6 @@ jobs:
           echo "Building PDF: $PDF_NAME"
 
           # `make pdf` runs check-ly (excerpt/inline .ly) then lilypond-book + LaTeX.
-          # Optional verbose snippet log first (second lilypond-book pass).
-          make lily
           make pdf
 
           # Copy the built PDF to the timestamped filename

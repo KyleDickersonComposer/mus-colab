@@ -34,6 +34,9 @@ bin/
 # LilyPond build artifacts
 *.eps
 
+# Local-only stress copies for `make check-ly` timing (see timing-stress-*.ly); delete when done.
+chapters/introduction/excerpt/timing-stress-*.ly
+
 # Temporary files
 tmp*
 *.tmp

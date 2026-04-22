@@ -1,5 +1,0 @@
-\beginBookExample{C major scale in whole notes}
-\beginBookExampleMusic
-\lilypondfile{chapters/introduction/excerpt/c-major-scale.ly}
-\finishBookExampleMusic
-\finishBookExample

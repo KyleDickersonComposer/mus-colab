@@ -2,7 +2,11 @@
 
 Long excerpts can stay on ordinary text pages while still \emph{sharing vertical space} between systems. You give a target height for the whole figure; the layout engine then stretches the gaps between systems so a short passage floats comfortably in the frame and a tall passage breathes evenly instead of leaving one giant hole under the last staff.
 
-\input{./chapters/introduction/full-music/c-major-spread.lytex}
+\beginBookExample{Scale Etude}
+\beginFixedHeightMusicExample{0.50\textheight}
+\lilypondfile{chapters/introduction/excerpt/c-major-etude.ly}
+\finishFixedHeightMusicExample
+\finishBookExample
 
 The scale étude above shows the pattern: adjust the height until the spread matches your taste, and keep using the same house engraving defaults as other block examples so staff width still matches the type block.
 
