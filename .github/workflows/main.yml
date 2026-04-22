@@ -28,12 +28,7 @@ jobs:
           # Copy the built PDF to the timestamped filename
           cp bin/main.pdf "$PDF_NAME"
 
-          # Source bundle: exact tracked tree for this commit (zip — avoids stale build tree / bin/)
-          SOURCE_ZIP="${PDF_BASE}-source.zip"
-          git archive --format=zip -o "$SOURCE_ZIP" HEAD
-
           echo "PDF_NAME=$PDF_NAME" >> $GITHUB_ENV
-          echo "SOURCE_ZIP_NAME=$SOURCE_ZIP" >> $GITHUB_ENV
 
       - name: Clean up build artifacts
         run: |
@@ -42,8 +37,7 @@ jobs:
           # List what we're publishing
           echo "Files to publish:"
           test -f "${{ env.PDF_NAME }}"
-          test -f "${{ env.SOURCE_ZIP_NAME }}"
-          ls -lh "${{ env.PDF_NAME }}" "${{ env.SOURCE_ZIP_NAME }}"
+          ls -lh "${{ env.PDF_NAME }}"
 
       - name: Publish latest release (gh + git tag)
         env:
@@ -51,12 +45,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TARGET: ${{ github.sha }}
           PDF_NAME: ${{ env.PDF_NAME }}
-          SOURCE_ZIP_NAME: ${{ env.SOURCE_ZIP_NAME }}
         run: |
           set -euo pipefail
           TAG=latest
           TITLE='Latest mus-colab PDF'
-          NOTES="PDF and tracked source (git archive) at commit ${TARGET:0:7}."
+          NOTES="PDF for commit ${TARGET:0:7}. Tracked source: use this release’s **Source code (zip)** (same tag / SHA)."
 
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
@@ -71,9 +64,9 @@ jobs:
               [[ -n "$id" ]] || continue
               gh api --method DELETE "repos/${GH_REPO}/releases/assets/${id}"
             done
-            gh release upload "$TAG" "$PDF_NAME" "$SOURCE_ZIP_NAME"
+            gh release upload "$TAG" "$PDF_NAME"
           else
-            gh release create "$TAG" "$PDF_NAME" "$SOURCE_ZIP_NAME" \
+            gh release create "$TAG" "$PDF_NAME" \
               --target "$TARGET" \
               --title "$TITLE" \
               --notes "$NOTES" \
