@@ -1,0 +1,16 @@
+\section{What this template is trying to show}
+
+You already read scores for a living; the machinery around a book should not punish you for that. \ProjectName exists to prove you do not trade engraving quality for a workflow you hate, and you do not cram a whole dissertation into one file because ``that is how Word works.''
+
+At the top level, \verb|main.tex| is the driver: it loads the shared layout and then \verb|\input|s the front matter, each chapter, and the back matter in reading order. Finished prose lives in companion \verb|.tex| files beside the chapter they belong to. Musical examples live in separate \verb|.ly| files that those chapter files import (typically with \verb|\lilypondfile| after \verb|lilypond-book| has run). That split keeps editing sessions short on screen and makes the project easier to share with friends, students, or coauthors.
+
+\textbf{Keeping words and music apart.} Within each chapter, engraved material lives only in the \textbf{inline}, \textbf{excerpt}, and \textbf{full-music} areas. Chapter prose should stay commentary-only and include those fragments by reference so a text edit never touches a music block, and an engraving tweak does not churn the paragraphs around it.
+
+\begin{bookStyledBulletList}{Why the files are split this way}
+\item Open \verb|main.tex| once and you see the whole skeleton---no thousand-line monolith to scroll through when you only meant to fix a typo in the preface.
+\item Two people can work at once without playing attachment roulette: one stays in prose while the other edits only the matching \verb|.ly| fragment.
+\item Typography and spacing rules stay in the \textbf{LaTeX style layer}, so chapter files read like music talk instead of layout archaeology.
+\item LilyPond defaults for snippets live in the \textbf{Lily include layer}, so every excerpt still feels like the same house engraved it.
+\end{bookStyledBulletList}
+
+A short glossary at the back defines a handful of companion terms---\gls{open-source}, \gls{version-control}, \gls{github}, \gls{plain-text}, and \gls{permissively-licensed}---that show up whenever people argue about how modern collaborative publishing actually works. If your readers already speak that dialect, delete or rewrite the entries. When you want a term to pull glossary wording automatically in the body, mark it with the glossary machinery at its first important appearance.

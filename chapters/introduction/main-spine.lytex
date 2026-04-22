@@ -1,5 +1,0 @@
-\section{Role of the spine file}
-
-Think of the spine file as a conductor's score rather than the entire orchestra. It should almost never hold long paragraphs of finished writing. Instead, it quietly declares the type of document you are making, loads the shared typography helpers, and then calls each chapter file in the order a reader would meet them.
-
-When you add a new chapter, create a folder for it, add inline, excerpt, and full-music areas when you need them, and list each prose section from the spine in reading order with ordinary chapter headings and one include per fragment. A coauthor can honestly say, ``I am only touching the excerpt fragment for this tune today,'' and everyone else knows that only that engraving will move.

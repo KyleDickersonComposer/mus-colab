@@ -1,0 +1,88 @@
+\section{Book commands (quick reference)}
+\label{sec:book-commands}
+
+What follows is deliberately plain: every macro and environment you are expected to type, spelled out so you can search, copy, and teach without hunting a GUI. Programmers hide this stuff behind buttons; here it stays in the open because the whole point of the stack is that \emph{you} own the pipeline. Definitions live under \verb|source/latex/|; you do not have to open those files to use the commands. Copy the patterns below into your own \verb|.tex| chapter files and swap the placeholders for real titles and music paths.
+
+\subsection*{Front matter and back matter headings}
+
+\begin{description}
+  \item[\texttt{\textbackslash frontMatterChapter\{Title\}}]
+  Starts an unnumbered chapter with the thin rule under the title. Reach for it from \verb|main.tex| for the preface, the list of musical examples, and anything else that should look like a front-matter chapter. Add \verb|\addcontentsline{toc}{chapter}{...}| when you also want a table-of-contents line (see \verb|main.tex| for working examples).
+  \item[\texttt{\textbackslash backMatterChapter\{Title\}}]
+  Matches the front-matter look, but drops in a PDF anchor and a TOC entry automatically. The bibliography hooks this style through \verb|heading=bookbibliography|.
+  \item[\texttt{\textbackslash begin\{bookBackMatterText\}} \ldots\ \texttt{\textbackslash end\{bookBackMatterText\}}]
+  Slightly smaller type and tighter leading for dense back matter. The glossary print style wraps entries in this environment so the back pages do not feel like a wall of defaults.
+\end{description}
+
+\subsection*{Styled lists (prose only)}
+
+\begin{description}
+  \item[\texttt{\textbackslash begin\{bookStyledList\}\{Heading\}} \ldots\ \texttt{\textbackslash end\{bookStyledList\}}]
+  Numbered list with a bold heading line in house colors. Put the heading in the mandatory argument, then one \verb|\item| per row.
+  \item[\texttt{\textbackslash begin\{bookStyledBulletList\}\{Heading\}} \ldots\ \texttt{\textbackslash end\{bookStyledBulletList\}}]
+  Same layout as the numbered list, but labels are bullets. Use either environment when you want a callout that still reads like ordinary book prose instead of a slide deck.
+\end{description}
+
+\subsection*{Music examples and the list at the front}
+
+\begin{description}
+  \item[\texttt{\textbackslash listofmusicalexamples}]
+  Drops in the unnumbered ``List of Musical Examples'' chapter and fills it from the running list. Call it once from \verb|main.tex| (the template already does).
+  \item[\texttt{\textbackslash beginBookExample\{Short title\}} \ldots\ \texttt{\textbackslash finishBookExample}]
+  Opens \textbf{Example $n$} with your short title, reserves a list-of-examples line at the correct page, and closes the vertical spacing after the body. Put anything between begin and finish: prose, graphics, or one of the music helpers below.
+  \item[\texttt{\textbackslash beginBookExampleMusic} \ldots\ \texttt{\textbackslash finishBookExampleMusic}]
+  Lives \emph{inside} \verb|\beginBookExample| when the body is a \verb|lilypond-book| fragment (\verb|\begin{lilypond}| \ldots\ \verb|\end{lilypond}|, \verb|\lilypondfile{...}|, etc.). Systems get a fixed gap; each system's graphics are centered so a wide snippet cannot wander past the type block.
+  \item[\texttt{\textbackslash betweenLilyPondSystem}]
+  Default hook between LilyPond systems (fixed vertical skip). \verb|lilypond-book| calls it between systems; you rarely touch it unless you are doing advanced layout inside a confined group.
+  \item[\texttt{\textbackslash bookInlineMusicUseBaseline} / \texttt{\textbackslash bookInlineMusicUseVerticalCenter}]
+  Pick alignment \emph{before} \verb|\beginBookInlineMusic|. Baseline: inline music at the start of a paragraph. Vertical center: inline music after the first line of a paragraph.
+  \item[\texttt{\textbackslash beginBookInlineMusic} \ldots\ \texttt{\textbackslash finishBookInlineMusic}]
+  Wraps inline \verb|lilypond| fragments so staff images line up with text. Close with \verb|\finishBookInlineMusic| on the same logical fragment.
+  \item[\texttt{\textbackslash beginStretchHeightMusicExample\{height\}} \ldots\ \texttt{\textbackslash finishStretchHeightMusicExample}]
+  Fixed-height block; glue \emph{between} systems stretches with \verb|\vfill|. Same behavior as \verb|\beginFixedHeightMusicExample| / \verb|\finishFixedHeightMusicExample| (aliases). Pass a height such as \verb|0.42\textheight|.
+  \item[\texttt{\textbackslash beginMultiPageStretchMusicExample\{system\}\{vskip\}} \ldots\ \texttt{\textbackslash finishMultiPageStretchMusicExample}]
+  Multi-page excerpt: when LilyPond reaches the system index you name (integer), the layout fires \verb|\clearpage| and optional top glue \verb|vskip|. Other system breaks use stretch glue like the fixed-height helper.
+  \item[\texttt{\textbackslash incompleteContentNotice}]
+  Draft box with rules for placeholder chapters. Strip the macro call from \verb|main.tex| (or from the chapter \verb|\input| chain) once the chapter is real material.
+\end{description}
+
+\noindent\textbf{Minimal display example.} Nesting order never changes: example wrapper, then music wrapper, then LilyPond.
+
+\begin{verbatim}
+\beginBookExample{Scale degrees in C major}
+\beginBookExampleMusic
+\lilypondfile{./chapters/.../snippet.ly}
+\finishBookExampleMusic
+\finishBookExample
+\end{verbatim}
+
+\subsection*{Chord symbols and Roman numerals in prose}
+
+\begin{description}
+  \item[\texttt{\textbackslash MusicChord\{key=value, ...\}}]
+  Single interface for chord symbols in running text. Required keys: \verb|root=| (pitch letter) and \verb|quality=maj|, \verb|min|, \verb|dom|, or \verb|aug|. Optional keys: \verb|acc=| (\verb|flat| / \verb|sharp|), \verb|seven=| (e.g.\ \verb|7|, empty), \verb|alters={9/flat,5/flat}| (degree/kind pairs; kinds are \verb|flat|, \verb|sharp|, \verb|natural|), \verb|bass=| and \verb|bass acc=| for slash chords. Use \verb|bass=...|, not a raw slash in keys (pgf treats \verb|/| specially).
+  \item[\texttt{\textbackslash RomNum}, \texttt{\textbackslash RomNumS}, \texttt{\textbackslash RomViiO}]
+  Small helpers for Roman numerals in harmonic analysis text.
+\end{description}
+
+\noindent\textbf{Concrete chord line.} The following is valid inside a paragraph:
+
+\begin{verbatim}
+... resolves to \MusicChord{root=F, quality=maj, seven=7} then
+\MusicChord{root=G, quality=min, seven=7} \MusicChord{root=C, quality=dom, seven=7} \MusicChord{root=F, quality=maj, seven=7}.
+\end{verbatim}
+
+\subsection*{Glossary and bibliography hooks}
+
+\begin{description}
+  \item[\texttt{\textbackslash gls\{label\}}]
+  Prints the glossary entry for \verb|label| and wires the hyperref jump. Entries live in \verb|source/latex/glossary.tex|.
+  \item[\texttt{\textbackslash printglossary[style=bookdefinition]}]
+  Called once from \verb|main.tex|; the \verb|bookdefinition| style applies the back-matter text environment and a simple name\,\textemdash\,description layout.
+  \item[\texttt{\textbackslash printbibliography[heading=bookbibliography, title=\{Bibliography\}]}]
+  Prints the bibliography with the same unnumbered chapter treatment as other back matter.
+\end{description}
+
+\subsection*{What stays in the style files}
+
+Anything not named above (internal list-of-examples plumbing, raw \verb|\@| commands, glossary style internals) belongs to maintainers editing \verb|page-style.tex|, \verb|music-examples.tex|, or \verb|music-chords.tex|. If a pattern repeats in every chapter, add one macro there and call it from prose so chapter files stay readable.

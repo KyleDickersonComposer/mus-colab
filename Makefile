@@ -64,7 +64,7 @@ check-ly:
 lily-check:
 	@$(MAKE) _lily_snippets LILYBOOK_LOGLEVEL=PROGRESS LILY_SNIPPET_STRICT=1
 
-# lilypond-book only, DEBUG log (maps snippets to .lytex). No excerpt/inline pass, no LaTeX.
+# lilypond-book only, DEBUG log (maps snippets to .tex sources). No excerpt/inline pass, no LaTeX.
 lily:
 	@$(MAKE) _lily_snippets LILYBOOK_LOGLEVEL=DEBUG LILY_SNIPPET_STRICT=0
 

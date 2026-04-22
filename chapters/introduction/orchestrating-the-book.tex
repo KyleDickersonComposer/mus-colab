@@ -1,0 +1,9 @@
+\section{What \texttt{main.tex} does}
+
+Philosophy aside, the spine of the build is almost insultingly small: one file lists the whole book in the order a reader meets it.
+
+The file \verb|main.tex| is the book's driver. It chooses the document class, loads the shared layout and music helpers, and then pulls in each piece of front matter, each chapter, and the back matter with \verb|\input{...}| in reading order. Keep this file mostly structural: headings, \verb|\input| lines, and the occasional one-line note—not long finished prose.
+
+\textbf{Where the music lives.} Engraved examples are not typed into \verb|main.tex|. Each fragment normally lives in its own \verb|.ly| file under the chapter tree (inline, excerpt, or full-page areas). Your chapter \verb|.tex| files import those with \verb|\lilypondfile{./path/to/score.ly}| inside the book's music wrappers (\verb|\beginBookExample| and friends). The \verb|lilypond-book| step turns LilyPond into graphics and LaTeX glue; \verb|make check-ly| can still run plain LilyPond on the same \verb|.ly| files for fast error checking.
+
+When you grow the book, add a chapter folder, keep prose in section-sized \verb|.tex| files, keep each musical example in a \verb|.ly| you import, and add one \verb|\input| per prose file to \verb|main.tex| in the order readers should meet them—using ordinary \verb|\chapter| and \verb|\section| headings as you already do in the template.
