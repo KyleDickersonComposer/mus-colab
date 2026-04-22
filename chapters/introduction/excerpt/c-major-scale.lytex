@@ -1,14 +1,5 @@
 \beginBookExample{C major scale in whole notes}
 \beginBookExampleMusic
-\begin{lilypond}
-\version "2.24.0"
-\include "lily/book-example.ily"
-\relative c' {
-  \clef treble
-  \key c \major
-  \time 4/4
-  c1 | d | e | f | g | a | b | c \bar "||"
-}
-\end{lilypond}
+\lilypondfile{chapters/introduction/excerpt/c-major-scale.ly}
 \finishBookExampleMusic
 \finishBookExample

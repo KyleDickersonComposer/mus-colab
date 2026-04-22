@@ -3,6 +3,7 @@
 % Full-bleed pages: inherit general staff tweaks from book-example.ily, then match
 % The Barry Book real-book chart width (19.15 cm) and tighten vertical spacing
 % between *systems* so TeX + LilyPond do not each add a huge gap.
+#(set-global-staff-size 21)
 
 \include "lily/book-example.ily"
 

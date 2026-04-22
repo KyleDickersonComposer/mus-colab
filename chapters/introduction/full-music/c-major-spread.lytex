@@ -5,8 +5,9 @@
 \include "lily/book-example.ily"
 
 \header {
-  title = \markup \fontsize #4 \bold "Scale Etude"
-  composer = "You (Or someone you're studying)"
+  title = "Scale Etude"
+  composer = "You (or someone you're studying)"
+  arranger = "Arranged by Me Myself"
 }
 
 \relative c' {

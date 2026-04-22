@@ -17,7 +17,9 @@
   ragged-right = ##f
   \context {
     \StaffGroup
+    % Hide the brace before the first system (ChordNames + staff excerpt).
     \remove "System_start_delimiter_engraver"
   }
+  % No barline before the first measure (book excerpt look).
   \override Score.SystemStartBar.stencil = ##f
 }

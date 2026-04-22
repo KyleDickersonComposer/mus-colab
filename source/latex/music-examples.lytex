@@ -7,27 +7,34 @@
 }
 \makeatother
 
-% Same vertical separation before the example heading and after the example body
-% (so prose↔\verb|\beginBookExample| matches the gap before the next paragraph).
-\newlength{\bookExampleBlockSep}
-\setlength{\bookExampleBlockSep}{1.25\baselineskip}
-
+\makeatletter
+\newlength{\bookExampleOuterSep}
+\setlength{\bookExampleOuterSep}{1em}
+\newlength{\bookExampleInnerSep}
+% Heading-to-music spacing = base gap plus full outer block separation.
+\setlength{\bookExampleInnerSep}{1.35em}
 \newcounter{bookExample}
 \newcommand{\bookExampleLoEentry}{}
+\newcommand{\bookExampleLoEHref}{}
 \newcommand{\beginBookExample}[1]{%
   \refstepcounter{bookExample}%
+  \phantomsection
+  \xdef\bookExampleLoEHref{\@currentHref}%
   \def\bookExampleLoEentry{Example \thebookExample. #1}%
-  \par\addvspace{\bookExampleBlockSep}%
+  \par\addvspace{\bookExampleOuterSep}%
   \noindent{\bfseries Example~\thebookExample:} #1\par
-  \nobreak\addvspace{0.35em}%
+  \nobreak\addvspace{\bookExampleInnerSep}%
 }
 \newcommand{\finishBookExample}{%
-  \par\addvspace{\bookExampleBlockSep}%
-  % List-of-examples page must be written after the body is laid out; writing at
-  % \beginBookExample captured \thepage before breaks (e.g. LilyPond height).
-  \phantomsection
-  \addcontentsline{loe}{bookexample}{\bookExampleLoEentry}%
+  \par\addvspace{\bookExampleOuterSep}%
+  % Write LoE entry after the body so the page number is correct, but keep the
+  % hyperlink target at the heading captured in \beginBookExample.
+  \begingroup
+    \edef\@currentHref{\bookExampleLoEHref}%
+    \addcontentsline{loe}{bookexample}{\bookExampleLoEentry}%
+  \endgroup
 }
+\makeatother
 
 \newsavebox{\bookInlineMusicBox}
 \newcommand{\bookInlineMusicAlign}{vc}
@@ -80,7 +87,7 @@
 % Usage:
 %   \beginStretchHeightMusicExample{0.42\textheight}
 %   % or: \beginFixedHeightMusicExample{0.42\textheight}
-%   \begin{lilypond} ... \end{lilypond}
+%   \begin{lilypond} ... \end{lilypond}   % or excerpt/inline: \lilypondfile{chapters/.../foo.ly}
 %   \finishStretchHeightMusicExample
 % ------------------------------------------------------------------
 \newcommand{\beginStretchHeightMusicExample}[1]{%

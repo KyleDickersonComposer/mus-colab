@@ -5,7 +5,7 @@ If you open the project on your computer, these are the habits that keep ``where
 \begin{bookStyledList}{Common locations}
 \item \textbf{The book's outline:} the spine file. Treat it like a table of contents with instructions attached. It should list chapters, not long passages of finished prose.
 \item \textbf{Chapter prose:} one section per file at the chapter root is a comfortable default.
-\item \textbf{Chapter music only:} keep music blocks in the inline, excerpt, and full-music areas. Prose should include them by reference instead of pasting raw music into the same file as the commentary.
+\item \textbf{Chapter music only:} keep music in the inline and excerpt areas as standalone \texttt{.ly} files and pull them in with \verb|\lilypondfile{...}| from small \texttt{.lytex} wrappers so you can run \texttt{make check-ly} for native LilyPond errors. Full-page block examples can stay inline or follow the same pattern when you want the same check.
 \item \textbf{Page appearance and overall typography:} shared layout and package setup for teammates who enjoy fine-tuning headings, spacing, and fonts.
 \item \textbf{Numbered music examples:} shared LaTeX helpers that introduce each example, add it to the list at the front of the book, and optionally put tall scores in a fixed-height frame so vertical space is shared between systems. A separate pair of helpers handles scores that must break across pages at a chosen system boundary.
 \item \textbf{Chord symbols inside ordinary sentences:} a small chord helper so accidentals and spacing stay consistent when harmony appears in running text.
