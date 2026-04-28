@@ -1,3 +1,76 @@
+\newif\ifbookexampleactive
+\newif\ifbookinlineactive
+
+\ExplSyntaxOn
+
+\msg_new:nnnn { bookexamples } { begin-example-while-active }
+  { bookexamples:~beginBookExample~called~while~an~example~is~already~active. }
+  {
+    Call~\token_to_str:N \finishBookExample~before~starting~another~example.^^J
+    Nested~example~wrappers~are~not~supported.
+  }
+\msg_new:nnnn { bookexamples } { finish-example-without-begin }
+  { bookexamples:~finishBookExample~called~without~a~matching~beginBookExample. }
+  {
+    Start~an~example~with~\token_to_str:N \beginBookExample~before~calling~
+    \token_to_str:N \finishBookExample.
+  }
+\msg_new:nnnn { bookexamples } { begin-inline-while-active }
+  { bookexamples:~beginBookInlineMusic~called~while~inline~music~is~already~active. }
+  {
+    Call~\token_to_str:N \finishBookInlineMusic~before~opening~another~
+    inline~music~wrapper.
+  }
+\msg_new:nnnn { bookexamples } { finish-inline-without-begin }
+  { bookexamples:~finishBookInlineMusic~called~without~a~matching~beginBookInlineMusic. }
+  {
+    Start~inline~music~with~\token_to_str:N \beginBookInlineMusic~before~
+    calling~\token_to_str:N \finishBookInlineMusic.
+  }
+\msg_new:nnnn { bookexamples } { bad-break-index }
+  { bookexamples:~invalid~page-break~index~'#1'. }
+  {
+    The~system-break~index~must~be~a~positive~integer~(1,~2,~3,~...).^^J
+    Example:~\token_to_str:N \beginMultiPageStretchMusicExample\{2\}\{2em\}.
+  }
+\msg_new:nnnn { bookexamples } { bad-inline-align }
+  { bookexamples:~invalid~inline~music~alignment~'#1'. }
+  {
+    Allowed~values~are~'vc'~(vertical~center)~and~'baseline'.^^J
+    Use~\token_to_str:N \bookInlineMusicUseVerticalCenter~or~
+    \token_to_str:N \bookInlineMusicUseBaseline.
+  }
+
+\newcommand{\bookexamplesBreakIndexValue}{1}
+\cs_new_protected:Npn \__bookexamples_store_break_index:n #1
+  { \gdef\bookexamplesBreakIndexValue{#1} }
+\cs_new_protected:Npn \__bookexamples_set_break_index:n #1
+  {
+    \regex_match:nnTF { \A \s* [1-9] \d* \s* \Z } {#1}
+      {
+        \tl_set:Nn \l_tmpa_tl {#1}
+        \tl_trim_spaces:N \l_tmpa_tl
+        \exp_args:NV \__bookexamples_store_break_index:n \l_tmpa_tl
+      }
+      {
+        \msg_error:nnn { bookexamples } { bad-break-index } {#1}
+        \__bookexamples_store_break_index:n {1}
+      }
+  }
+\cs_new_protected:Npn \bookexamplesSetBreakIndex #1
+  { \__bookexamples_set_break_index:n {#1} }
+\cs_new_protected:Npn \bookexamplesInlineAlignError #1
+  { \msg_error:nnn { bookexamples } { bad-inline-align } {#1} }
+\cs_new_protected:Npn \bookexamplesInlineBeginError
+  { \msg_error:nn { bookexamples } { begin-inline-while-active } }
+\cs_new_protected:Npn \bookexamplesInlineFinishError
+  { \msg_error:nn { bookexamples } { finish-inline-without-begin } }
+\cs_new_protected:Npn \bookexamplesExampleBeginError
+  { \msg_error:nn { bookexamples } { begin-example-while-active } }
+\cs_new_protected:Npn \bookexamplesExampleFinishError
+  { \msg_error:nn { bookexamples } { finish-example-without-begin } }
+\ExplSyntaxOff
+
 \makeatletter
 \newcommand*{\l@bookexample}{\@dottedtocline{1}{0em}{2.3em}}
 \newcommand{\listofmusicalexamples}{%
@@ -11,7 +84,6 @@
 \newlength{\bookExampleOuterSep}
 \setlength{\bookExampleOuterSep}{1em}
 \newlength{\bookExampleInnerSep}
-% Heading-to-music spacing = base gap plus full outer block separation.
 \setlength{\bookExampleInnerSep}{1.35em}
 \newlength{\bookExampleBottomSep}
 \setlength{\bookExampleBottomSep}{2\bookExampleOuterSep}
@@ -19,22 +91,31 @@
 \newcommand{\bookExampleLoEentry}{}
 \newcommand{\bookExampleLoEHref}{}
 \newcommand{\beginBookExample}[1]{%
+  \ifbookexampleactive
+    \bookexamplesExampleBeginError
+  \fi
+  \global\bookexampleactivetrue
   \refstepcounter{bookExample}%
   \phantomsection
   \xdef\bookExampleLoEHref{\@currentHref}%
-  \def\bookExampleLoEentry{Example \thebookExample. #1}%
+  \gdef\bookExampleLoEentry{Example \thebookExample. #1}%
   \par\addvspace{\bookExampleOuterSep}%
   \noindent{\bfseries Example~\thebookExample:} #1\par
   \nobreak\addvspace{\bookExampleInnerSep}%
 }
 \newcommand{\finishBookExample}{%
-  \par\addvspace{\bookExampleBottomSep}%
-  % Write LoE entry after the body so the page number is correct, but keep the
-  % hyperlink target at the heading captured in \beginBookExample.
-  \begingroup
-    \edef\@currentHref{\bookExampleLoEHref}%
-    \addcontentsline{loe}{bookexample}{\bookExampleLoEentry}%
-  \endgroup
+  \ifbookexampleactive
+    \par\addvspace{\bookExampleBottomSep}%
+    % Write the LoE entry after the body so the page number is correct, but
+    % keep the hyperlink target at the heading captured in \beginBookExample.
+    \begingroup
+      \edef\@currentHref{\bookExampleLoEHref}%
+      \addcontentsline{loe}{bookexample}{\bookExampleLoEentry}%
+    \endgroup
+    \global\bookexampleactivefalse
+  \else
+    \bookexamplesExampleFinishError
+  \fi
 }
 \makeatother
 
@@ -42,21 +123,38 @@
 \newcommand{\bookInlineMusicAlign}{vc}
 \newcommand{\bookInlineMusicUseVerticalCenter}{\renewcommand{\bookInlineMusicAlign}{vc}}
 \newcommand{\bookInlineMusicUseBaseline}{\renewcommand{\bookInlineMusicAlign}{baseline}}
-% Inline music at the top of a paragraph should use baseline alignment so the paragraph start stays clear.
-% Inline music after the first line should use vertical-center alignment.
+
 \newcommand{\beginBookInlineMusic}{%
+  \ifbookinlineactive
+    \bookexamplesInlineBeginError
+  \fi
+  \global\bookinlineactivetrue
   \begingroup
-  % Compare expanded strings; \ifx fails here because \bookInlineMusicAlign is \long
-  % (from \newcommand) while a \def test would be short—same text, false \ifx.
+  % Compare expanded strings; \ifx is unsafe here because \bookInlineMusicAlign
+  % is \long (\newcommand default) while a \def test would be short.
   \ifnum\pdfstrcmp{\bookInlineMusicAlign}{baseline}=0
-  \else
-    \def\preLilyPondExample{\setbox\bookInlineMusicBox=\hbox\bgroup}%
-    \def\postLilyPondExample{\egroup\raisebox{\dimexpr.5ex-.5\ht\bookInlineMusicBox\relax}{\usebox{\bookInlineMusicBox}}}%
+  \else\ifnum\pdfstrcmp{\bookInlineMusicAlign}{vc}=0
+      \def\preLilyPondExample{\setbox\bookInlineMusicBox=\hbox\bgroup}%
+      \def\postLilyPondExample{%
+        \egroup
+        \raisebox{\dimexpr.5ex-.5\ht\bookInlineMusicBox\relax}{\usebox{\bookInlineMusicBox}}%
+      }%
+    \else
+      \bookexamplesInlineAlignError{\bookInlineMusicAlign}%
+    \fi
   \fi
 }
-\newcommand{\finishBookInlineMusic}{\endgroup}
+\newcommand{\finishBookInlineMusic}{%
+  \ifbookinlineactive
+    \global\bookinlineactivefalse
+    \endgroup
+  \else
+    \bookexamplesInlineFinishError
+  \fi
+}
+
 % lilypond-book emits \includegraphics per system; center each within the text
-% block so line-width in LilyPond cannot overrun page margins (same as Barry Book).
+% block so line-width in LilyPond cannot overrun page margins.
 \newcommand{\bookMusicExampleCenterGraphics}{%
   \let\bookExampleIncludeGraphics\includegraphics
   \renewcommand{\includegraphics}[2][]{%
@@ -72,26 +170,6 @@
 \newcommand{\finishBookExampleMusic}{\par\endgroup}
 \newcommand{\betweenLilyPondSystem}[1]{\vspace{6mm}\linebreak}
 
-% ------------------------------------------------------------------
-% Tall in-flow music: fixed *height* box + stretchy glue between systems
-%
-% lilypond-book inserts \betweenLilyPondSystem between each engraved system.
-% Uses the same \bookMusicExampleCenterGraphics hook as \beginBookExampleMusic
-% so each system's \includegraphics is centered in \linewidth (matches Barry Book).
-% A height-fixed minipage with inner position \texttt{s} (stretch) plus \verb|\vfill|
-% between systems (no leading \verb|\vfill| so the block does not hang below the
-% example heading). Plain \verb|\vfil| inside \verb|\vbox| can lose to higher-order glue
-% from paragraph spacing (e.g.\ setspace), so we use \verb|\vfill| here.
-%
-% \beginFixedHeightMusicExample / \finishFixedHeightMusicExample are synonyms
-% (same behaviour: one fixed outer height, systems spaced with \verb|\vfill| inside).
-%
-% Usage:
-%   \beginStretchHeightMusicExample{0.42\textheight}
-%   % or: \beginFixedHeightMusicExample{0.42\textheight}
-%   \begin{lilypond} ... \end{lilypond}   % or excerpt/inline: \lilypondfile{chapters/.../foo.ly}
-%   \finishStretchHeightMusicExample
-% ------------------------------------------------------------------
 \newcommand{\beginStretchHeightMusicExample}[1]{%
   \par
   \begingroup
@@ -109,14 +187,13 @@
 \newcommand{\beginFixedHeightMusicExample}[1]{\beginStretchHeightMusicExample{#1}}
 \newcommand{\finishFixedHeightMusicExample}{\finishStretchHeightMusicExample}
 
-% Continuation across pages: no \newgeometry; only \clearpage when the given
-% LilyPond system index is reached. Between systems on one page, glue is \verb|\vfill|.
 \newcommand{\beginMultiPageStretchMusicExample}[2]{%
   \begingroup
   \bookMusicExampleCenterGraphics
+  \bookexamplesSetBreakIndex{#1}%
   \def\betweenLilyPondSystem##1{%
     \par
-    \ifnum##1=#1
+    \ifnum##1=\bookexamplesBreakIndexValue\relax
       \clearpage
       \vspace*{#2}%
       \noindent

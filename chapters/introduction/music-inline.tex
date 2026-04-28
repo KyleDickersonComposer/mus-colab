@@ -2,4 +2,10 @@
 
 This is the smallest ``music inside a sentence'' unit: one staff, paragraph scale, no apology for being technical because the reader already agreed to read.
 
-Inline excerpts use a tighter staff size so a short gesture can sit beside text without dominating the page. The sample cell on this page is pulled in from its own fragment so a copy editor and an engraver can work in parallel. This example uses vertical centering so the cell sits naturally within running prose instead of looking perched on the baseline.\input{./chapters/introduction/inline/d-cell.tex}
+Inline excerpts use a tighter staff size so a short gesture can sit beside text without dominating the page. Keep the LilyPond source in its own file, but put the surrounding wrapper directly in the chapter prose file instead of adding an extra \texttt{.tex} shim for one example. This example uses vertical centering so the cell sits naturally within running prose instead of looking perched on the baseline.
+
+\begingroup
+\beginBookInlineMusic
+\lilypondfile{chapters/introduction/inline/d-cell.ly}
+\finishBookInlineMusic
+\endgroup

@@ -24,53 +24,76 @@ What follows is deliberately plain: every macro and environment you are expected
 \end{description}
 
 \subsection*{Music examples and the list at the front}
+\begingroup
+\sloppy
 
-\begin{description}
-  \item[\texttt{\textbackslash listofmusicalexamples}]
-  Drops in the unnumbered ``List of Musical Examples'' chapter and fills it from the running list. Call it once from \verb|main.tex| (the template already does).
-  \item[\texttt{\textbackslash beginBookExample\{Short title\}} \ldots\ \texttt{\textbackslash finishBookExample}]
-  Opens \textbf{Example $n$} with your short title, reserves a list-of-examples line at the correct page, and closes the vertical spacing after the body. Put anything between begin and finish: prose, graphics, or one of the music helpers below.
-  \item[\texttt{\textbackslash beginBookExampleMusic} \ldots\ \texttt{\textbackslash finishBookExampleMusic}]
-  Lives \emph{inside} \verb|\beginBookExample| when the body is a \verb|lilypond-book| fragment (\verb|\begin{lilypond}| \ldots\ \verb|\end{lilypond}|, \verb|\lilypondfile{...}|, etc.). Systems get a fixed gap; each system's graphics are centered so a wide snippet cannot wander past the type block.
-  \item[\texttt{\textbackslash betweenLilyPondSystem}]
-  Default hook between LilyPond systems (fixed vertical skip). \verb|lilypond-book| calls it between systems; you rarely touch it unless you are doing advanced layout inside a confined group.
-  \item[\texttt{\textbackslash bookInlineMusicUseBaseline} / \texttt{\textbackslash bookInlineMusicUseVerticalCenter}]
-  Pick alignment \emph{before} \verb|\beginBookInlineMusic|. Baseline: inline music at the start of a paragraph. Vertical center: inline music after the first line of a paragraph.
-  \item[\texttt{\textbackslash beginBookInlineMusic} \ldots\ \texttt{\textbackslash finishBookInlineMusic}]
-  Wraps inline \verb|lilypond| fragments so staff images line up with text. Close with \verb|\finishBookInlineMusic| on the same logical fragment.
-  \item[\texttt{\textbackslash beginStretchHeightMusicExample\{height\}} \ldots\ \texttt{\textbackslash finishStretchHeightMusicExample}]
-  Fixed-height block; glue \emph{between} systems stretches with \verb|\vfill|. Same behavior as \verb|\beginFixedHeightMusicExample| / \verb|\finishFixedHeightMusicExample| (aliases). Pass a height such as \verb|0.42\textheight|.
-  \item[\texttt{\textbackslash beginMultiPageStretchMusicExample\{system\}\{vskip\}} \ldots\ \texttt{\textbackslash finishMultiPageStretchMusicExample}]
-  Multi-page excerpt: when LilyPond reaches the system index you name (integer), the layout fires \verb|\clearpage| and optional top glue \verb|vskip|. Other system breaks use stretch glue like the fixed-height helper.
-  \item[\texttt{\textbackslash incompleteContentNotice}]
-  Draft box with rules for placeholder chapters. Strip the macro call from \verb|main.tex| (or from the chapter \verb|\input| chain) once the chapter is real material.
-\end{description}
+\noindent\texttt{\textbackslash listofmusicalexamples}\\
+Drops in the unnumbered ``List of Musical Examples'' chapter and fills it from the running list. Call it once from \verb|main.tex|; the template already does.
+
+\noindent\texttt{\textbackslash beginBookExample\{Short title\}}\\
+\texttt{\textbackslash finishBookExample}\\
+Opens \textbf{Example $n$} with your short title, reserves a list-of-examples line at the correct page, and closes the vertical spacing after the body. Put anything between begin and finish: prose, graphics, or one of the music helpers below.
+
+\noindent\texttt{\textbackslash beginBookExampleMusic}\\
+\texttt{\textbackslash finishBookExampleMusic}\\
+Lives inside \verb|\beginBookExample| when the body is a \verb|lilypond-book| fragment such as \verb|\lilypondfile{...}|. Systems get a fixed gap, and each system's graphics are centered so a wide snippet cannot wander past the type block. Put those wrapper lines directly in the chapter file that discusses the example rather than hiding them in an extra one-purpose \texttt{.tex} include.
+
+\noindent\texttt{\textbackslash betweenLilyPondSystem}\\
+Default hook between LilyPond systems with a fixed vertical skip. \verb|lilypond-book| calls it between systems; you rarely touch it unless you are doing advanced layout inside a confined group.
+
+\noindent\texttt{\textbackslash bookInlineMusicUseBaseline}\\
+\texttt{\textbackslash bookInlineMusicUseVerticalCenter}\\
+Pick alignment before \verb|\beginBookInlineMusic|. Baseline is for inline music at the start of a paragraph. Vertical center is for inline music after the first line of a paragraph.
+
+\noindent\texttt{\textbackslash beginBookInlineMusic}\\
+\texttt{\textbackslash finishBookInlineMusic}\\
+Wraps inline \verb|lilypond| fragments so staff images line up with text. Close with \verb|\finishBookInlineMusic| on the same logical fragment. As with block examples, the wrapper usually belongs directly in the chapter file around the LilyPond import.
+
+\noindent\texttt{\textbackslash beginStretchHeightMusicExample}\\
+\texttt{\{height\}}\\
+\texttt{\textbackslash finishStretchHeightMusicExample}\\
+Fixed-height block; glue between systems stretches with \verb|\vfill|. Same behavior as \verb|\beginFixedHeightMusicExample| and \verb|\finishFixedHeightMusicExample|. Pass a height such as \verb|0.42\textheight|.
+
+\noindent\texttt{\textbackslash beginMultiPageStretchMusicExample}\\
+\texttt{\{system\}\{vskip\}}\\
+\texttt{\textbackslash finishMultiPageStretchMusicExample}\\
+Multi-page excerpt: when LilyPond reaches the system index you name, the layout fires \verb|\clearpage| and optional top glue \verb|vskip|. Other system breaks use stretch glue like the fixed-height helper.
+
+\noindent\texttt{\textbackslash incompleteContentNotice}\\
+Draft box with rules for placeholder chapters. Strip the macro call from \verb|main.tex|, or from the chapter \verb|\input| chain, once the chapter is real material.
 
 \noindent\textbf{Minimal display example.} Nesting order never changes: example wrapper, then music wrapper, then LilyPond.
 
-\begin{verbatim}
-\beginBookExample{Scale degrees in C major}
-\beginBookExampleMusic
-\lilypondfile{./chapters/.../snippet.ly}
-\finishBookExampleMusic
-\finishBookExample
-\end{verbatim}
+\begin{quote}
+\small\ttfamily\raggedright
+\textbackslash beginBookExample\{Scale degrees in C major\}\\
+\textbackslash beginBookExampleMusic\\
+\textbackslash lilypondfile\{./chapters/.../snippet.ly\}\\
+\textbackslash finishBookExampleMusic\\
+\textbackslash finishBookExample
+\end{quote}
+\endgroup
 
 \subsection*{Chord symbols and Roman numerals in prose}
 
-\begin{description}
-  \item[\texttt{\textbackslash MusicChord\{key=value, ...\}}]
-  Single interface for chord symbols in running text. Required keys: \verb|root=| (pitch letter) and \verb|quality=maj|, \verb|min|, \verb|dom|, or \verb|aug|. Optional keys: \verb|acc=| (\verb|flat| / \verb|sharp|), \verb|seven=| (e.g.\ \verb|7|, empty), \verb|alters={9/flat,5/flat}| (degree/kind pairs; kinds are \verb|flat|, \verb|sharp|, \verb|natural|), \verb|bass=| and \verb|bass acc=| for slash chords. Use \verb|bass=...|, not a raw slash in keys (pgf treats \verb|/| specially).
-  \item[\texttt{\textbackslash RomNum}, \texttt{\textbackslash RomNumS}, \texttt{\textbackslash RomViiO}]
-  Small helpers for Roman numerals in harmonic analysis text.
-\end{description}
+\noindent\texttt{\textbackslash MusicChord\{key=value, ...\}}\\
+Single interface for chord symbols in running text. Required keys: \verb|root=| (pitch letter) and \verb|quality=maj|, \verb|min|, \verb|dom|, or \verb|aug|. Optional keys: \verb|acc=| (\verb|flat| / \verb|sharp|), \verb|seven=| (for example \verb|7|), \verb|alters={9/flat,5/flat}|, \verb|bass=|, and \verb|bass acc=| for slash chords. The parser accepts legacy aliases too, but \verb|bass=...| and \verb|bass acc=...| are the maintainable forms.
+
+\noindent\texttt{\textbackslash RomNum}, \texttt{\textbackslash RomNumS}, \texttt{\textbackslash RomViiO}\\
+Small helpers for Roman numerals in harmonic analysis text.
+
+\noindent\texttt{source/lily/jazzchords.ily}\\
+Optional LilyPond-side helper for custom lead-sheet chord naming. Include it from a snippet only when you want engraved chord names to use the jazz-style root namer and exception table; the default template does not force that styling on every score.
 
 \noindent\textbf{Concrete chord line.} The following is valid inside a paragraph:
 
-\begin{verbatim}
-... resolves to \MusicChord{root=F, quality=maj, seven=7} then
-\MusicChord{root=G, quality=min, seven=7} \MusicChord{root=C, quality=dom, seven=7} \MusicChord{root=F, quality=maj, seven=7}.
-\end{verbatim}
+\begin{quote}
+\ttfamily\raggedright
+... resolves to \textbackslash MusicChord\{root=F, quality=maj, seven=7\} then\\
+\textbackslash MusicChord\{root=G, quality=min, seven=7\}\\
+\textbackslash MusicChord\{root=C, quality=dom, seven=7\}\\
+\textbackslash MusicChord\{root=F, quality=maj, seven=7\}.
+\end{quote}
 
 \subsection*{Glossary and bibliography hooks}
 
