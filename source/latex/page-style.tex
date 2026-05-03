@@ -124,6 +124,30 @@
   \frontMatterChapter{\contentsname}%
   \@starttoc{toc}%
 }
+\newcommand*\book@tocnumberline[1]{#1\enspace}
+\newcommand*\book@naturaltocline[4]{%
+  \ifnum #1>\c@tocdepth \else
+    \vskip \z@ \@plus.2\p@
+    {\leftskip #2\relax \rightskip \@tocrmarg \parfillskip -\rightskip
+     \parindent #2\relax\@afterindenttrue
+     \interlinepenalty\@M
+     \leavevmode
+     \begingroup
+       \let\numberline\book@tocnumberline
+       #3%
+     \endgroup
+     \nobreak
+     \leaders\hbox{$\m@th
+        \mkern \@dotsep mu\hbox{.}\mkern \@dotsep
+        mu$}\hfill
+     \nobreak
+     \hb@xt@\@pnumwidth{\hfil\normalfont \normalcolor #4%
+                        \kern-\p@\kern\p@}%
+     \par}%
+  \fi}
+\renewcommand*\l@section[2]{\book@naturaltocline{1}{1.5em}{#1}{#2}}
+\renewcommand*\l@subsection[2]{\book@naturaltocline{2}{3.0em}{#1}{#2}}
+\renewcommand*\l@subsubsection[2]{\book@naturaltocline{3}{4.5em}{#1}{#2}}
 \renewcommand*\l@part[2]{%
   \ifnum \c@tocdepth >-2\relax
     \addpenalty{-\@highpenalty}%
